@@ -45,7 +45,7 @@ const [title, setTitle] = useState("")
         console.warn('Could not retrieve files, using fallback:', fileError);
         files = uploadedFiles;
       }
-
+      console.log("files:", files)
       await onAddTask({
         title: title.trim(),
         description: description.trim(),
