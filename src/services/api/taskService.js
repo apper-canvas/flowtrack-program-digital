@@ -104,6 +104,21 @@ export const taskService = {
         throw new Error("Database connection not available")
       }
 
+// Convert files to proper database format if provided
+      let convertedFiles = null;
+      if (taskData.files_c && Array.isArray(taskData.files_c) && taskData.files_c.length > 0) {
+        try {
+          if (window.ApperSDK?.ApperFileUploader?.toCreateFormat) {
+            convertedFiles = window.ApperSDK.ApperFileUploader.toCreateFormat(taskData.files_c);
+          } else {
+            convertedFiles = taskData.files_c;
+          }
+        } catch (fileError) {
+          console.warn('Error converting files, using original format:', fileError);
+          convertedFiles = taskData.files_c;
+        }
+      }
+
       // Only send Updateable fields to database
       const params = {
         records: [{
@@ -112,12 +127,12 @@ export const taskService = {
           description_c: taskData.description || "",
           priority_c: taskData.priority || "medium",
           status_c: taskData.status || "active",
-          completed_at_c: taskData.completedAt || null
+          completed_at_c: taskData.completedAt || null,
+          ...(convertedFiles && { files_c: convertedFiles })
         }]
       }
 
-      const response = await apperClient.createRecord("task_c", params)
-
+const response = await apperClient.createRecord("task_c", params)
       if (!response.success) {
         console.error(response.message)
         toast.error(response.message)
@@ -137,7 +152,7 @@ export const taskService = {
         }
 
         if (successful.length > 0) {
-          const createdTask = successful[0].data
+const createdTask = successful[0].data
           return {
             Id: createdTask.Id,
             title: createdTask.title_c || taskData.title,
@@ -145,7 +160,8 @@ export const taskService = {
             priority: createdTask.priority_c || taskData.priority || "medium",
             status: createdTask.status_c || taskData.status || "active",
             completedAt: createdTask.completed_at_c || taskData.completedAt || null,
-            createdAt: createdTask.CreatedOn
+            createdAt: createdTask.CreatedOn,
+            files: createdTask.files_c || []
           }
         }
       }

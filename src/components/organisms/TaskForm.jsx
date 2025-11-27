@@ -5,14 +5,15 @@ import Input from "@/components/atoms/Input"
 import Select from "@/components/atoms/Select"
 import Textarea from "@/components/atoms/Textarea"
 import ApperIcon from "@/components/ApperIcon"
+import ApperFileFieldComponent from "@/components/atoms/FileUploader/ApperFileFieldComponent"
 
 const TaskForm = ({ onAddTask }) => {
-  const [title, setTitle] = useState("")
+const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [priority, setPriority] = useState("medium")
+  const [uploadedFiles, setUploadedFiles] = useState([])
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-
   const validateForm = () => {
     const newErrors = {}
     
@@ -34,18 +35,31 @@ const TaskForm = ({ onAddTask }) => {
     setIsSubmitting(true)
     
     try {
+// Retrieve files using SDK method
+      let files = [];
+      try {
+        if (window.ApperSDK?.ApperFileUploader?.FileField?.getFiles) {
+          files = await window.ApperSDK.ApperFileUploader.FileField.getFiles('files_c');
+        }
+      } catch (fileError) {
+        console.warn('Could not retrieve files, using fallback:', fileError);
+        files = uploadedFiles;
+      }
+
       await onAddTask({
-title: title.trim(),
+        title: title.trim(),
         description: description.trim(),
         priority,
         status: "active",
-        completedAt: null
+        completedAt: null,
+        files_c: files || []
       })
       
       // Reset form
-      setTitle("")
+setTitle("")
       setDescription("")
       setPriority("medium")
+      setUploadedFiles([])
       setErrors({})
     } catch (error) {
       console.error("Error adding task:", error)
@@ -144,6 +158,25 @@ title: title.trim(),
                   className={`w-4 h-4 ${getPriorityColor(priority)}`} 
                 />
               </div>
+</div>
+            
+            {/* File Upload Section */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">
+                Attachments
+              </label>
+              <ApperFileFieldComponent
+                elementId="files_c"
+                config={{
+                  fieldKey: 'files_c',
+                  fieldName: 'files_c',
+                  tableName: 'task_c',
+                  apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+                  apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY,
+                  existingFiles: uploadedFiles,
+                  fileCount: uploadedFiles.length
+                }}
+              />
             </div>
           </div>
 
