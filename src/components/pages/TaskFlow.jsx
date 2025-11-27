@@ -37,6 +37,7 @@ const TaskFlow = () => {
   }, [])
 
   const handleAddTask = async (taskData) => {
+    console.log("taskData:", taskData)
     try {
       const newTask = await taskService.create(taskData)
       setTasks(prev => [newTask, ...prev])
